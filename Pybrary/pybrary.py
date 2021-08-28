@@ -10,8 +10,8 @@ from PyQt5.QtWidgets import (QAbstractItemView, QApplication, QButtonGroup,
                              QWidget)
 
 HEADERS = ["Name", "Edition", "Authors", "Topics", "Publisher"]
-# with open("library.json", "r") as f: # use if running script directly
-with open("Pybrary/library.json", "r") as f: # use if runnning from batch file
+with open("library.json", "r") as f: # use if running script directly
+# with open("Pybrary/library.json", "r") as f: # use if runnning from batch file
 
     BOOK_DICT = json.load(f)
     for book in BOOK_DICT:
@@ -96,7 +96,8 @@ class ResultsTable(QTableWidget):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
+        
+        self._createToolBars()
         self.setWindowTitle("Pybary")
         self.setGeometry(0, 0, 750, 500)
 
@@ -153,6 +154,9 @@ class MainWindow(QMainWindow):
         self.widget = QWidget()
         self.widget.setLayout(self.page_layout)
         self.setCentralWidget(self.widget)
+
+    def _createToolBars(self):
+        mainToolBar = self.addToolBar("Main")
 
     def make_search(self):
         query = self.input_bar.text()

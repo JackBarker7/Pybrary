@@ -10,8 +10,9 @@ from PyQt5.QtWidgets import (QAbstractItemView, QApplication, QButtonGroup,
                              QWidget)
 
 HEADERS = ["Name", "Edition", "Authors", "Topics", "Publisher"]
-# with open("Pybrary/library.json", "r") as f:
-with open("library.json", "r") as f:
+# with open("library.json", "r") as f: # use if running script directly
+with open("Pybrary/library.json", "r") as f: # use if runnning from batch file
+
     BOOK_DICT = json.load(f)
     for book in BOOK_DICT:
         # convert author entries into nice strings

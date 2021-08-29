@@ -1,25 +1,52 @@
 import json
 from ast import literal_eval
 from subprocess import Popen
+from PyQt5.QtGui import QIcon
+import qrc_resources
+from copy import deepcopy, error
+from os import getcwd
+
+from PyQt5.QtWidgets import (QAbstractItemView, QAction, QApplication, QButtonGroup,
+                             QFileDialog, QFormLayout, QGroupBox, QHBoxLayout,
+                             QHeaderView, QLabel, QLineEdit, QMainWindow,
+                             QMessageBox, QPushButton, QRadioButton, QTableWidget,
+                             QTableWidgetItem, QVBoxLayout, QWidget)
 
 
-from PyQt5.QtWidgets import (QAbstractItemView, QApplication, QButtonGroup,
-                             QHBoxLayout, QHeaderView, QLabel, QLineEdit,
-                             QMainWindow, QPushButton, QRadioButton,
-                             QTableWidget, QTableWidgetItem, QVBoxLayout,
-                             QWidget)
-
+BOOK_LIST = []
+KEYS = ["Location", "Name", "Edition", "Authors",
+        "Topics", "Publisher", "Storage_type"]
 HEADERS = ["Name", "Edition", "Authors", "Topics", "Publisher"]
-with open("library.json", "r") as f: # use if running script directly
-# with open("Pybrary/library.json", "r") as f: # use if runnning from batch file
+JSONPATH = "Pybrary/library.json"
 
-    BOOK_DICT = json.load(f)
-    for book in BOOK_DICT:
-        # convert author entries into nice strings
-        book["authors"] = ", ".join(map(str, book["authors"]))
-        book["topics"] = ", ".join(map(str, book["topics"]))
-    BOOK_DICT.sort(key=lambda book: book["edition"])
-    BOOK_DICT.sort(key=lambda book: book["name"])
+
+class Book(dict):
+    '''a modification of dict to add a prettified version of book dicts to display in GUIs
+    Book.pretty is the same dict, with the authors and topics fields formatted to remove
+    square brackets etc from string representation of list'''
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.pretty = deepcopy(args[0])
+        for field in ["authors", "topics"]:
+            self.pretty[field] = ", ".join(map(str, self.pretty[field]))
+
+
+with open(JSONPATH, "r") as f:
+
+    for book in json.load(f):
+        BOOK_LIST.append(Book(book))
+    BOOK_LIST.sort(key=lambda book: book["edition"])
+    BOOK_LIST.sort(key=lambda book: book["name"])
+
+
+def show_error(text, title):
+    error_box = QMessageBox()
+    error_box.setIcon(QMessageBox.Critical)
+    error_box.setText(text)
+    error_box.setWindowTitle(title)
+    error_box.exec_()
 
 
 def query_book_dict(query="", field="") -> dict:
@@ -28,10 +55,10 @@ def query_book_dict(query="", field="") -> dict:
     rep = []
 
     if not query:
-        rep = BOOK_DICT
+        rep = BOOK_LIST
         return rep
 
-    for book in BOOK_DICT:
+    for book in BOOK_LIST:
         if query.lower() in str(book[field]).lower():
             rep.append(book)
 
@@ -47,7 +74,7 @@ class ResultsTable(QTableWidget):
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
         self.setSortingEnabled(True)
-        self.setRowCount(len(BOOK_DICT))
+        self.setRowCount(len(BOOK_LIST))
         self.setColumnCount(len(HEADERS))
         self.setHorizontalHeaderLabels(HEADERS)
 
@@ -60,9 +87,8 @@ class ResultsTable(QTableWidget):
 
         self.update_table(query_book_dict())
 
-    def open_pdf(self):
-        '''opens pdf associated with current line selected'''
-
+    def get_book(self):
+        '''returns book associated with current line selected'''
         row = int(self.currentRow())
         dat = {}
 
@@ -74,10 +100,18 @@ class ResultsTable(QTableWidget):
             # convert from list to str
             dat["authors"] = literal_eval(dat["authors"])
 
-        for book in BOOK_DICT:
-            if dat.items() <= book.items():  # checks if book contains dat
-                Popen([book["location"]], shell=True)
-                return
+        for book in BOOK_LIST:
+            if dat.items() <= book.pretty.items():  # checks if book contains dat
+                return book
+        return None
+
+    def open_pdf(self):
+        '''opens pdf associated with current line selected'''
+        try:
+            file_path = self.get_book()["location"]
+            Popen([file_path], shell=True)
+        except AttributeError:
+            show_error("No book selected!", "Error")
 
     def update_table(self, books: dict):
         '''takes a dict and refreshes table with entries'''
@@ -90,14 +124,95 @@ class ResultsTable(QTableWidget):
                 self.setItem(
                     row,
                     col,
-                    QTableWidgetItem(str(book[header.lower()])))
+                    QTableWidgetItem(str(book.pretty[header.lower()])))
+
+
+class BookForm(QWidget):
+    '''generates a pop-up form to add a new book'''
+
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Add new book")
+        self.create_form()
+
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(self.form_group_box)
+        self.setLayout(self.layout)
+
+    def create_form(self):
+        # form setup -----
+        self.form_group_box = QGroupBox("New Book Entry")
+        layout = QFormLayout()
+        self.entries = {"location": QLineEdit()}
+
+        # adding file search functionality to location row -----
+        self.search_file_button = QPushButton("...")
+        self.search_file_button.clicked.connect(self.open_file_dialog)
+        # need a box layout as layout.addRow() only allows 2 widgets
+        location_row_layout = QHBoxLayout()
+        location_row_layout.addWidget(self.entries["location"])
+        location_row_layout.addWidget(self.search_file_button)
+        layout.addRow(QLabel("Location"), location_row_layout)
+
+        # populate rest of table -----
+        for key in KEYS[1:]:
+            self.entries[key.lower()] = QLineEdit()
+            layout.addRow(QLabel(key), self.entries[key.lower()])
+
+        # add default text -----
+        self.entries["storage_type"].setText("local")
+
+        # final setup -----
+        self.submit_button = QPushButton("Add book")
+        self.submit_button.clicked.connect(self.add_book)
+        layout.addRow(self.submit_button)
+        self.form_group_box.setLayout(layout)
+
+    def open_file_dialog(self):
+        '''opens a file dialog to allow user to select file to add.
+        inserts relative path of file into location field of form'''
+        file = QFileDialog.getOpenFileName(
+            self, "Open file", getcwd(), "*.pdf")
+        file_location = file[0].strip(getcwd().replace("\\", "/"))
+        self.entries["location"].setText(file_location)
+
+    def add_book(self):
+        '''gets all entries from forms, turns them into a book objects, then addds this to the master list'''
+        global BOOK_LIST
+        new_dict = {}
+        for key in KEYS:
+            key = key.lower()
+            new_dict[key] = self.entries[key].text()
+
+        new_dict["authors"] = new_dict["authors"].split(",")
+        new_dict["topics"] = new_dict["topics"].split(",")
+
+        try:
+            new_dict["edition"] = int(new_dict["edition"])
+        except ValueError:
+            show_error("Edition must be a number!", "Error")
+            self.destroy()
+
+            return
+
+        book = Book(new_dict)
+        BOOK_LIST.append(book)
+        with open(JSONPATH, "w") as f:
+            json.dump(BOOK_LIST, f)
+        window.results_table.update_table(query_book_dict())
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        
-        self._createToolBars()
+
+        # create table of results -----
+        # this is done early so that the results table can be referenced
+        self.results_table = ResultsTable()
+
+        self.createActions()
+        self.createToolBars()
+
         self.setWindowTitle("Pybary")
         self.setGeometry(0, 0, 750, 500)
 
@@ -123,10 +238,6 @@ class MainWindow(QMainWindow):
             self.searchby_radio_buttons.append(new_button)
             self.searchby_button_group.addButton(new_button)
             self.searchby_button_layout.addWidget(new_button)
-
-        # create table of results -----
-        # this is done early so that the results table can be referenced
-        self.results_table = ResultsTable()
 
         # add button to make search -----
         self.make_search_button = QPushButton("Search")
@@ -155,10 +266,28 @@ class MainWindow(QMainWindow):
         self.widget.setLayout(self.page_layout)
         self.setCentralWidget(self.widget)
 
-    def _createToolBars(self):
+    def createToolBars(self):
         mainToolBar = self.addToolBar("Main")
+        mainToolBar.addAction(self.openAction)
+        mainToolBar.addAction(self.saveAction)
+        mainToolBar.addAction(self.deleteAction)
+
+    def createActions(self):
+        openIcon = QIcon(":open.svg")
+        saveIcon = QIcon(":plus.svg")
+        deleteIcon = QIcon(":minus.svg")
+
+        self.openAction = QAction(openIcon, "Open PDF", self)
+        self.saveAction = QAction(saveIcon, "Add new book", self)
+        self.deleteAction = QAction(deleteIcon, "Delete book", self)
+
+        self.openAction.triggered.connect(self.results_table.open_pdf)
+        self.saveAction.triggered.connect(self.add_book)
+        self.deleteAction.triggered.connect(self.delete_book)
 
     def make_search(self):
+        '''gets query and field from QLineEdit and radio buttons respectively
+        uses these to update the results table'''
         query = self.input_bar.text()
         try:
             field = self.searchby_button_group.checkedButton().text().lower()
@@ -167,6 +296,27 @@ class MainWindow(QMainWindow):
             field = "name"
 
         self.results_table.update_table(query_book_dict(query, field))
+
+    def add_book(self):
+        self.new_book_gui = BookForm()
+        self.new_book_gui.show()
+
+    def delete_book(self):
+        global BOOK_LIST
+        confirm = QMessageBox.question(
+            self,
+            "Confirm delete",
+            "Are you sure you want to delete?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No  # default
+        )
+        if confirm == QMessageBox.Yes:
+            book = self.results_table.get_book()
+            BOOK_LIST.remove(book)
+            with open(JSONPATH, "w") as f:
+                json.dump(BOOK_LIST, f)
+        self.results_table.update_table(query_book_dict())
+        return
 
 
 app = QApplication([])

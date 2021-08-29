@@ -1,0 +1,7 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+    <file alias="plus.svg">resources/plus-lg.svg</file>
+    <file alias="minus.svg">resources/dash-lg.svg</file>
+    <file alias="open.svg">resources/folder2-open.svg</file>
+</qresource>
+</RCC>

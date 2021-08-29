@@ -5,12 +5,12 @@ Script can be run dicrectly, through `pybrary.py`. I recommend that it is run fr
 
 Recommended directory structure:
 
-master directory
-| pybrary.bat
-| books
-|    | <books go here>
-| Pybrary
-|    | pybrary.py
-|    | env
-|    | resources
-|    |  etc.
+* master directory  
+  * pybrary.bat  
+  * books  
+    * books go here  
+  * Pybrary  
+    * pybrary.py  
+    * env  
+    * resources  
+    * etc.  

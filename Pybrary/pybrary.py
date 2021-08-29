@@ -311,10 +311,13 @@ class MainWindow(QMainWindow):
             QMessageBox.No  # default
         )
         if confirm == QMessageBox.Yes:
-            book = self.results_table.get_book()
-            BOOK_LIST.remove(book)
-            with open(JSONPATH, "w") as f:
-                json.dump(BOOK_LIST, f)
+            try:
+                book = self.results_table.get_book()
+                BOOK_LIST.remove(book)
+                with open(JSONPATH, "w") as f:
+                    json.dump(BOOK_LIST, f)
+            except AttributeError:
+                show_error("No book selected!", "Error")
         self.results_table.update_table(query_book_dict())
         return
 

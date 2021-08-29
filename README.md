@@ -7,7 +7,7 @@ The library data is stored in `library.json`. An example is included in the repo
 
 I have also included a virtual environment with necessary packages installed.
 
-The GUI is written using PyQt5, and the add, delete and open icons used were downloaded from https://icons.getbootstrap.com/
+The GUI is written using [PyQt5](https://pypi.org/project/PyQt5/), and the add, delete and open icons used were downloaded from https://icons.getbootstrap.com/
 
 ## Recommended directory structure: ##
 

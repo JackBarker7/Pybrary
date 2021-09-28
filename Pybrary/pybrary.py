@@ -155,6 +155,8 @@ class BookForm(QWidget):
         self.setWindowTitle("Add new book")
         self.create_form()
 
+        self.setWindowIcon(QIcon(":plus.svg"))
+
         self.layout = QVBoxLayout()
         self.layout.addWidget(self.form_group_box)
         self.setLayout(self.layout)

@@ -6,24 +6,39 @@ import qrc_resources
 from copy import deepcopy, error
 from os import getcwd
 
-from PyQt5.QtWidgets import (QAbstractItemView, QAction, QApplication, QButtonGroup,
-                             QFileDialog, QFormLayout, QGroupBox, QHBoxLayout,
-                             QHeaderView, QLabel, QLineEdit, QMainWindow,
-                             QMessageBox, QPushButton, QRadioButton, QTableWidget,
-                             QTableWidgetItem, QVBoxLayout, QWidget)
+from PyQt5.QtWidgets import (
+    QAbstractItemView,
+    QAction,
+    QApplication,
+    QButtonGroup,
+    QFileDialog,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QMainWindow,
+    QMessageBox,
+    QPushButton,
+    QRadioButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 
 BOOK_LIST = []
-KEYS = ["Location", "Name", "Edition", "Authors",
-        "Topics", "Publisher", "Storage_type"]
+KEYS = ["Location", "Name", "Edition", "Authors", "Topics", "Publisher", "Storage_type"]
 HEADERS = ["Name", "Edition", "Authors", "Topics", "Publisher"]
 JSONPATH = "Pybrary/library.json"
 
 
 class Book(dict):
-    '''a modification of dict to add a prettified version of book dicts to display in GUIs
+    """a modification of dict to add a prettified version of book dicts to display in GUIs
     Book.pretty is the same dict, with the authors and topics fields formatted to remove
-    square brackets etc from string representation of list'''
+    square brackets etc from string representation of list"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -49,9 +64,9 @@ def show_error(text, title):
     error_box.exec_()
 
 
-def query_book_dict(query="", field="") -> dict:
-    '''takes a query and a field. Returns all books that have <query> in <field>
-    If query is an empty string, return all books'''
+def query_book_dict(query: str = "", fields: list = []) -> dict:
+    """takes a query and a field. Returns all books that have <query> in <field>
+    If query is an empty string, return all books"""
     rep = []
 
     if not query:
@@ -59,14 +74,15 @@ def query_book_dict(query="", field="") -> dict:
         return rep
 
     for book in BOOK_LIST:
-        if query.lower() in str(book[field]).lower():
-            rep.append(book)
+        for field in fields:
+            if query.lower() in str(book[field]).lower():
+                rep.append(book)
 
     return rep
 
 
 class ResultsTable(QTableWidget):
-    '''generates results table widget.'''
+    """generates results table widget."""
 
     def __init__(self):
         super().__init__()
@@ -78,9 +94,14 @@ class ResultsTable(QTableWidget):
         self.setColumnCount(len(HEADERS))
         self.setHorizontalHeaderLabels(HEADERS)
 
+        #Allow double clicking of book to open it
+        self.doubleClicked.connect(self.open_pdf)
+
         for i in range(0, 2):
             # have name and edition columns take up the space they need
-            self.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeToContents)
+            self.horizontalHeader().setSectionResizeMode(
+                i, QHeaderView.ResizeToContents
+            )
         for i in range(2, 5):
             # set other columns to fill up rest of available space
             self.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
@@ -88,7 +109,7 @@ class ResultsTable(QTableWidget):
         self.update_table(query_book_dict())
 
     def get_book(self):
-        '''returns book associated with current line selected'''
+        """returns book associated with current line selected"""
         row = int(self.currentRow())
         dat = {}
 
@@ -106,7 +127,7 @@ class ResultsTable(QTableWidget):
         return None
 
     def open_pdf(self):
-        '''opens pdf associated with current line selected'''
+        """opens pdf associated with current line selected"""
         try:
             file_path = self.get_book()["location"]
             Popen([file_path], shell=True)
@@ -114,7 +135,7 @@ class ResultsTable(QTableWidget):
             show_error("No book selected!", "Error")
 
     def update_table(self, books: dict):
-        '''takes a dict and refreshes table with entries'''
+        """takes a dict and refreshes table with entries"""
 
         self.setRowCount(len(books))
         self.setColumnCount(len(HEADERS))
@@ -122,13 +143,12 @@ class ResultsTable(QTableWidget):
         for row, book in enumerate(books):
             for col, header in enumerate(HEADERS):
                 self.setItem(
-                    row,
-                    col,
-                    QTableWidgetItem(str(book.pretty[header.lower()])))
+                    row, col, QTableWidgetItem(str(book.pretty[header.lower()]))
+                )
 
 
 class BookForm(QWidget):
-    '''generates a pop-up form to add a new book'''
+    """generates a pop-up form to add a new book"""
 
     def __init__(self):
         super().__init__()
@@ -169,15 +189,14 @@ class BookForm(QWidget):
         self.form_group_box.setLayout(layout)
 
     def open_file_dialog(self):
-        '''opens a file dialog to allow user to select file to add.
-        inserts relative path of file into location field of form'''
-        file = QFileDialog.getOpenFileName(
-            self, "Open file", getcwd(), "*.pdf")
+        """opens a file dialog to allow user to select file to add.
+        inserts relative path of file into location field of form"""
+        file = QFileDialog.getOpenFileName(self, "Open file", getcwd(), "*.pdf")
         file_location = file[0].strip(getcwd().replace("\\", "/"))
         self.entries["location"].setText(file_location)
 
     def add_book(self):
-        '''gets all entries from forms, turns them into a book objects, then addds this to the master list'''
+        """gets all entries from forms, turns them into a book objects, then addds this to the master list"""
         global BOOK_LIST
         new_dict = {}
         for key in KEYS:
@@ -246,8 +265,7 @@ class MainWindow(QMainWindow):
 
         # add button to clear search -----
         self.clear_serach_button = QPushButton("Clear")
-        self.clear_serach_button.clicked.connect(
-            lambda: self.results_table.update_table(query_book_dict()))
+        self.clear_serach_button.clicked.connect(self.clear_search)
         self.searchby_button_layout.addWidget(self.clear_serach_button)
 
         # adds radio buttons and search butotn to GUI
@@ -286,16 +304,26 @@ class MainWindow(QMainWindow):
         self.deleteAction.triggered.connect(self.delete_book)
 
     def make_search(self):
-        '''gets query and field from QLineEdit and radio buttons respectively
-        uses these to update the results table'''
+        """gets query and field from QLineEdit and radio buttons respectively
+        uses these to update the results table"""
         query = self.input_bar.text()
         try:
-            field = self.searchby_button_group.checkedButton().text().lower()
+            field = [self.searchby_button_group.checkedButton().text().lower()]
         except AttributeError:
             # no field selected
-            field = "name"
+            field = [header.lower() for header in HEADERS]
 
         self.results_table.update_table(query_book_dict(query, field))
+
+    def clear_search(self):
+        self.results_table.update_table(query_book_dict())
+        self.input_bar.setText("")
+
+        #Button group has to temporarily be set to non exclusive so that all buttons can be unchecked
+        self.searchby_button_group.setExclusive(False)
+        for button in self.searchby_radio_buttons:
+            button.setChecked(False)
+        self.searchby_button_group.setExclusive(True)
 
     def add_book(self):
         self.new_book_gui = BookForm()
@@ -308,7 +336,7 @@ class MainWindow(QMainWindow):
             "Confirm delete",
             "Are you sure you want to delete?",
             QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No  # default
+            QMessageBox.No,  # default
         )
         if confirm == QMessageBox.Yes:
             try:

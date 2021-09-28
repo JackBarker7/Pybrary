@@ -26,8 +26,7 @@ Main window:
 ![image](https://user-images.githubusercontent.com/22815544/135133146-6440d777-bdf0-463f-b3bd-133be57023d5.png)
 
 Add new file to library:
-
-![image](https://user-images.githubusercontent.com/22815544/131254752-688d8220-26af-4811-912b-19aff730abd8.png)
+![image](https://user-images.githubusercontent.com/22815544/135134333-f621d4f4-93b2-43d1-ba44-88b1641b2e39.png)
 
 Pop-ups:
 

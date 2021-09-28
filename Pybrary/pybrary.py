@@ -177,7 +177,7 @@ class BookForm(QWidget):
         # populate rest of table -----
         for key in KEYS[1:]:
             self.entries[key.lower()] = QLineEdit()
-            layout.addRow(QLabel(key), self.entries[key.lower()])
+            layout.addRow(QLabel(key.replace("_t", " T")), self.entries[key.lower()])
 
         # add default text -----
         self.entries["storage_type"].setText("local")

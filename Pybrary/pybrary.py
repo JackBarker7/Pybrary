@@ -225,10 +225,14 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        # create table of results -----
+        # create table of results
         # this is done early so that the results table can be referenced
         self.results_table = ResultsTable()
 
+        #set icon
+        self.setWindowIcon(QIcon(":book-icon.svg"))
+
+        # toolbar and associated actions
         self.createActions()
         self.createToolBars()
 

@@ -7,7 +7,7 @@ The library data is stored in `library.json`. An example is included in the repo
 
 I have also included a virtual environment with necessary packages installed.
 
-The GUI is written using [PyQt5](https://pypi.org/project/PyQt5/), and the add, delete and open icons used were downloaded from https://icons.getbootstrap.com/
+The GUI is written using [PyQt5](https://pypi.org/project/PyQt5/), and the add, delete and open icons used were taken from [Bootstrap Icons](https://icons.getbootstrap.com/). The book icon for the window was taken from [SVG Repo](https://www.svgrepo.com/).
 
 ## Recommended directory structure: ##
 
@@ -23,8 +23,7 @@ The GUI is written using [PyQt5](https://pypi.org/project/PyQt5/), and the add, 
 
 ## Screenshots: ##
 Main window:
-
-![image](https://user-images.githubusercontent.com/22815544/131254720-e9fbcbb3-2525-4c42-8880-b8d726d851e5.png)
+![image](https://user-images.githubusercontent.com/22815544/135133146-6440d777-bdf0-463f-b3bd-133be57023d5.png)
 
 Add new file to library:
 
